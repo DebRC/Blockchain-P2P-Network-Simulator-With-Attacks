@@ -1,3 +1,5 @@
+import json
+
 class Transaction:
     """
     Represents a transaction or mining operation in a peer-to-peer network.
@@ -18,19 +20,18 @@ class Transaction:
         """
         Initializes a Transaction object.
         """
-        self.txnId = txnID
+        self.txnID = txnID
         self.val = val        
         self.senderPeer = senderPeer
         self.receiverPeer = receiverPeer
-        self.txnType = txnType
-        self.size=1
+        self.type = txnType
+        self.size = json.load(open('params.json'))['txn-size']
         
     def __str__(self) -> str:
         """
         Returns a String Representation of the Transaction object.
         """
-        if(self.txnType==1):
-            return str(self.txnId)+":"+str(self.senderPeer)+" pays "+str(self.receiverPeer)+" "+str(self.val)+" coins"
-        if(self.txnType==2):
-            return str(self.txnId)+":"+str(self.senderPeer)+" mines "+str(self.val)+" coins"
-        
+        if(self.type==1):
+            return str(self.txnID)+":"+str(self.senderPeer)+" pays "+str(self.receiverPeer)+" "+str(self.val)+" coins"
+        if(self.type==2):
+            return str(self.txnID)+":"+str(self.senderPeer)+" mines "+str(self.val)+" coins"
