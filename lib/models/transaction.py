@@ -2,7 +2,7 @@ import json, os
 
 class Transaction:
     """
-    Represents a transaction or mining operation in a peer-to-peer network.
+    Represents a transaction or mining operation in a peer-to-peer cryptocurrency network.
 
     Attributes:
     - txnId (int): Unique identifier for the transaction.
