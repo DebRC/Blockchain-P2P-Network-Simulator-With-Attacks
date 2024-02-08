@@ -2,3 +2,7 @@
 # Virtual Enviroment
 .venv
 venv/
+
+.vscode/
+lib/helper/__pycache__/
+lib/models/__pycache__/

@@ -1,34 +1,54 @@
-import random
+import os
+import heapq
 import json
+from numpy.random import default_rng
 
-def generate_random_number(distribution, **params):
-    """
-    Generate a random number based on the specified distribution.
+script_dir = os.path.dirname(os.path.abspath(__file__))
+params_path = os.path.join(script_dir, 'params.json')
 
-    Parameters:
-    - distribution (str): The chosen distribution ('uniform', 'normal', 'exponential', etc.).
-    - **params: Additional parameters specific to the chosen distribution.
+randomGenerator=None
+txnID=-1
+blockID=1
+totalBlocks=0
+globalEventQueue=[]
+latencyMatrix=None
 
-    Returns:
-    - float: The generated random number.
-    """
-    
-    defaultSeed = json.load(open('params.json'))['default-seed']
-    generator = random.Random(params.get('seed', defaultSeed))  # Set a seed if provided
-    
-    if distribution == 'uniform':
-        low = params.get('low', 0)
-        high = params.get('high', 1)
-        return generator.uniform(low, high)
-    
-    elif distribution == 'normal':
-        mean = params.get('mean', 0)
-        std = params.get('std', 1)
-        return generator.gauss(mean, std)
-    
-    elif distribution == 'exponential':
-        scale = params.get('scale', 1)
-        return generator.expovariate(1/scale)
+def initialize_rand_generator(seed=None):
+    global randomGenerator
+    if not seed:
+        seed = json.load(open(params_path))['default-seed']
+    randomGenerator=default_rng(seed)
 
+def generateTransactionID():
+    global txnID
+    txnID+=1
+    return txnID
+
+def generateBlockID():
+    global blockID
+    blockID+=1
+    return blockID
+
+def generateLatencyMatrix(n):
+    global latencyMatrix
+    latencyMatrix = randomGenerator.uniform(10,500,[n,n])
+
+def calculateLatency(senderPeer, receiverPeer, m):
+    if(senderPeer.lowSpeed or receiverPeer.lowSpeed):
+        c = 5
     else:
-        raise ValueError(f"Unsupported distribution: {distribution}")
+        c = 100        
+    d = randomGenerator.exponential(96/c)
+    return latencyMatrix[senderPeer.nodeID][receiverPeer.nodeID] + abs(m)/c + d
+
+def pushToEventQueue(event):
+    heapq.heappush(globalEventQueue, (event.time, event))
+
+def popFromEventQueue():
+    return heapq.heappop(globalEventQueue)
+
+def incrementTotalBlocks():
+    global totalBlocks
+    totalBlocks += 1
+
+initialize_rand_generator()

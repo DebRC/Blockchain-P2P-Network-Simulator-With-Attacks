@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 class Simulator:
     def __init__(self, n, ttx, z0, z1, I,simTime):
         self.n=n
-        self.genesis = Block(blockID=1, prevBlockID=0, txnList=set(), prevLengthOfChain=0, miner=None, balance = [0]*n, txnPool=set())
+        self.genesis = Block(blockID=1, prevBlockID=0, txnList=set(), prevLengthOfChain=0, miner=None, prevBlockBalance = [100]*n)
         # print(self.genesis)
 
         lowSpeed = [True for i in range(int(n*z0))]+[False for i in range(n-int(n*z0))]
@@ -79,12 +79,23 @@ class Simulator:
                 event=Event(time=t,type=0,senderPeer=p,receiverPeer=randomNode,txn=eventTXN)
                 pushToEventQueue(event=event)
                 t+=randomGenerator.exponential(self.ttx)
+        
+        t = randomGenerator.exponential(self.I)
+        event=Event(time=t,type=2,receiverPeer=self.nodes[random.randrange(self.n)])
+        pushToEventQueue(event=event)
 
     def simulate(self):
         time = 0
         while(time<=self.simTime and globalEventQueue):
             time, event = popFromEventQueue()
+            # if event.type==2 or event.type==3:
+            # print(event)
             event.receiverPeer.eventHandler(event)
+        for p in self.nodes:
+            res=[]
+            for block in p.blockchain.values():
+                res.append(str(block.prevBlockID)+":"+str(block.blockID))
+            print(res)
 
     def saveNetworkGraph(self): 
         plt.figure()
