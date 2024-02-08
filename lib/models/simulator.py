@@ -88,8 +88,8 @@ class Simulator:
         time = 0
         while(time<=self.simTime and globalEventQueue):
             time, event = popFromEventQueue()
-            # if event.type==2 or event.type==3:
-            # print(event)
+            if event.type==2 or event.type==3 or event.type==4:
+                print(event)
             event.receiverPeer.eventHandler(event)
         for p in self.nodes:
             res=[]
@@ -100,4 +100,4 @@ class Simulator:
     def saveNetworkGraph(self): 
         plt.figure()
         nx.draw(self.G, with_labels=True)
-        plt.savefig('graph.png')
+        plt.savefig('outputs/graph.png')
