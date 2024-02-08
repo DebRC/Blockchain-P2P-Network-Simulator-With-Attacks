@@ -101,3 +101,9 @@ class Simulator:
         plt.figure()
         nx.draw(self.G, with_labels=True)
         plt.savefig('outputs/graph.png')
+
+    def drawBlockchain(self):
+        for node in self.nodes:
+            plt.figure()
+            nx.draw(node.g, pos=nx.kamada_kawai_layout(node.g), node_size=10, node_color='red')
+            plt.savefig(f'./outputs/blockchain_{node.nodeID}.png')

@@ -42,8 +42,6 @@ class Node:
         self.g = nx.DiGraph()
 
         self.addGenesisBlock(genesisBlock)
-        # self.addFirstCoinbaseTXN(genesisBlock)
-        # self.mineBlock(0)
 
     def addGenesisBlock(self, genesisBlock):
         """
@@ -90,6 +88,23 @@ class Node:
             block = self.blockchain[block.prevBlockID]
         # print("THIS IS ALREADY INCLUDED:",len(txnIncluded))
         return txnIncluded
+
+    def getMiningTXN(self):
+        # Get new tranasaction ID
+        txnID = generateTransactionID()
+
+        # Get the mining value
+        miningValue = json.load(open(params_path))["mining-fee"]
+
+        # Prepare the mining TXN and add it to included txn list
+        miningTxn = Transaction(
+            txnID=txnID,
+            senderPeerID=-1,
+            receiverPeerID=self.nodeID,
+            val=miningValue,
+            type=1,
+        )
+        return miningTxn
 
     def eventHandler(self, event):
         if event.type == 0:
@@ -166,58 +181,57 @@ class Node:
         # print(self.blockchain.keys())
         t=event.time
         lastBlock: Block = self.blockchain[self.lastBlockID]
-        while True:
-            # Get the remaining TXN
-            remainingTxn = self.receivedTXN.difference(self.getAllIncludedTxn())
 
-            # Find out the invalid TXN
-            invalidTxn = set(
-                [
-                    txn
-                    for txn in remainingTxn
-                    if txn.val > lastBlock.balance[txn.senderPeerID]
-                ]
-            )
+        # Get mining txn
+        miningTxn = self.getMiningTXN()
+        
+        # Get the remaining TXN
+        remainingTxn = self.receivedTXN.difference(self.getAllIncludedTxn())
 
-            # Filter the valid txn only
-            validTxn = remainingTxn.difference(invalidTxn)
+        # Find out the valid TXN
+        validTxn = set(
+            [
+                txn
+                for txn in remainingTxn
+                if txn.val <= lastBlock.balance[txn.senderPeerID]
+            ]
+        )
 
-            # # If there is not valid TXN restart mining
-            numOfTxn = len(validTxn)
-            #     continue
+        numOfTxn = len(validTxn)
 
-            # Get the maximum block size
-            blockSize = json.load(open(params_path))["block-size"]
+        # Get the maximum block size
+        blockSize = json.load(open(params_path))["block-size"]
 
-            # Randomly choose number of transaction, but ensure
-            # it is does not exceed the blocksize-2
-            # Why 2? 1 for the block itself and 1 for the mining TXN
-            if numOfTxn > 1:
-                numOfTxn = min(random.randint(1, len(validTxn)), blockSize - 2)
+        # Randomly choose number of transaction, but ensure
+        # it is does not exceed the blocksize-2
+        # Why 2? 1 for the block itself and 1 for the mining TXN
+        if numOfTxn > 1:
+            numOfTxn = min(random.randint(1, len(validTxn)), blockSize - 2)
 
-            # Get transaction upto numOfTxn
-            includedTxn = set(list(validTxn)[:numOfTxn])
-            # print("NODE "+ str(self.nodeID)+"TXN TO BE ADDED WHILE MINING:",len(includedTxn))
+        # Get transaction upto numOfTxn
+        includedTxn = set(random.sample(validTxn,numOfTxn))
+        # print("NODE "+ str(self.nodeID)+"TXN TO BE ADDED WHILE MINING:",len(includedTxn))
 
-            # Get new tranasaction ID
-            txnID = generateTransactionID()
+        includedTxn.add(miningTxn)
 
-            # Get the mining value
-            miningValue = json.load(open(params_path))["mining-fee"]
+        # Get new block ID
+        blockID = generateBlockID()
 
-            # Prepare the mining TXN and add it to included txn list
-            miningTxn = Transaction(
-                txnID=txnID,
-                senderPeerID=-1,
-                receiverPeerID=self.nodeID,
-                val=miningValue,
-                type=1,
-            )
+        # Prepare a block with the transaction chosen
+        block = Block(
+            blockID=blockID,
+            prevBlockID=self.lastBlockID,
+            prevLengthOfChain=lastBlock.length,
+            txnList=includedTxn,
+            miner=self,
+            prevBlockBalance=lastBlock.balance,\
+        )
+
+        # Check if the block is all valid
+        while(not self.isBlockValid(block)):
+            numOfTxn = min(random.randint(1, len(validTxn)), blockSize - 2)
+            includedTxn = set(random.sample(validTxn,numOfTxn))
             includedTxn.add(miningTxn)
-
-            # Get new block ID
-            blockID = generateBlockID()
-
             # Prepare a block with the transaction chosen
             block = Block(
                 blockID=blockID,
@@ -227,11 +241,7 @@ class Node:
                 miner=self,
                 prevBlockBalance=lastBlock.balance,\
             )
-
-            # Check if the block is all valid
-            if self.isBlockValid(block):
-                break
-
+        
         # Add the latency for the block propagation to it's peers
         t += randomGenerator.exponential(self.mineTime)
         # Add to the event queue with type = 3
@@ -245,6 +255,7 @@ class Node:
         if block.blockID in self.blockchain:
             return
         self.blockchain[block.blockID] = block
+        self.g.add_edge(block.blockID, block.prevBlockID)
 
         if(block.prevBlockID == self.lastBlockID):
             self.lastBlockID = block.blockID
@@ -271,6 +282,7 @@ class Node:
             return
         lastBlock: Block = self.blockchain[self.lastBlockID]
         self.blockchain[block.blockID] = block
+        self.g.add_edge(block.blockID, block.prevBlockID)
         if (block.length > lastBlock.length):
             self.lastBlockID = block.blockID
             for peer in self.neighbors:
