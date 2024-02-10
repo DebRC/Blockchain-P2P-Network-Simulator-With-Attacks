@@ -11,7 +11,6 @@ txnID=-1
 blockID=1
 totalBlocks=0
 globalEventQueue=[]
-latencyMatrix=None
 
 def initialize_rand_generator(seed=None):
     global randomGenerator
@@ -28,18 +27,6 @@ def generateBlockID():
     global blockID
     blockID+=1
     return blockID
-
-def generateLatencyMatrix(n):
-    global latencyMatrix
-    latencyMatrix = randomGenerator.uniform(10,500,[n,n])
-
-def calculateLatency(senderPeer, receiverPeer, m):
-    if(senderPeer.lowSpeed or receiverPeer.lowSpeed):
-        c = 5
-    else:
-        c = 100        
-    d = randomGenerator.exponential(96/c)
-    return latencyMatrix[senderPeer.nodeID][receiverPeer.nodeID] + abs(m)/c + d
 
 def pushToEventQueue(event):
     heapq.heappush(globalEventQueue, (event.time, event))

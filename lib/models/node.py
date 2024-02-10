@@ -1,20 +1,17 @@
 import sys
-
+import copy
 sys.path.append("../helper")
 from helper.utils import *
 from models.event import Event
 from models.transaction import Transaction
 from models.block import Block
+from models.blockchain import BlockChain
 import json
 import random
 import networkx as nx
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 params_path = os.path.join(script_dir, "../helper", "params.json")
-
-## SAVE LAST BLOCK ID IN CHAIN
-## WHOSE MINING FINISH TIME IS THE LEAST
-
 
 class Node:
     def __init__(
@@ -24,22 +21,20 @@ class Node:
         mineTime,
         lowSpeed=False,
         lowCPU=False,
+        latencyMatrix=None
     ):
         self.nodeID = nodeID
         self.lowSpeed = lowSpeed
         self.lowCPU = lowCPU
         self.mineTime = mineTime
-        self.lastBlockID = genesisBlock.blockID
         self.blockCreated = 0
 
         self.neighbors = set()
-        self.blockchain = dict()
-        self.blockTime = dict()
-        self.blockReceived = set()
+        self.blockchain = BlockChain()
+        self.latencyMatrix = latencyMatrix
 
-        self.spuriousBlocks = set()
-        self.receivedTXN = set()
         self.g = nx.DiGraph()
+
 
         self.addGenesisBlock(genesisBlock)
 
@@ -47,49 +42,23 @@ class Node:
         """
         Adds the Genesis Block
         """
-        self.blockchain[genesisBlock.blockID] = genesisBlock
-        self.blockReceived.add(genesisBlock)
-        self.blockTime[genesisBlock.blockID] = 0
+        self.blockchain.addGenesisBlock(genesisBlock)
 
-    def isBlockValid(self, block: Block):
+    def calculateLatency(self,peer,size):
         """
-        Checks if the given block's
-        attributes are valid
+        Return Latency between two Nodes
         """
-        try:
-            prevBlock: Block = self.blockchain[block.prevBlockID]
-        except:
-            return False
-        for txn in block.txnList:
-            if txn.type == 1:
-                return True
-            if (
-                block.balance[txn.receiverPeerID] - txn.val
-                != prevBlock.balance[txn.receiverPeerID]
-            ):
-                return False
-            if (
-                block.balance[txn.senderPeerID] + txn.val
-                != prevBlock.balance[txn.senderPeerID]
-            ):
-                return False
-            if prevBlock.balance[txn.senderPeerID] - txn.val < 0:
-                return False
-        return True
+        if(self.lowSpeed or peer.lowSpeed):
+            c = 5
+        else:
+            c = 100        
+        d = randomGenerator.exponential(96/c)
+        return self.latencyMatrix[self.nodeID][peer.nodeID] + abs(size)/c + d
 
-    def getAllIncludedTxn(self):
+    def getCoinbaseTxn(self):
         """
-        Returns all the included transaction upto the last block added in chain
+        Returns a Mining TXN
         """
-        block: Block = self.blockchain[self.lastBlockID]
-        txnIncluded = set()
-        while block.prevBlockID != 0:
-            txnIncluded = txnIncluded.union(block.txnList)
-            block = self.blockchain[block.prevBlockID]
-        # print("THIS IS ALREADY INCLUDED:",len(txnIncluded))
-        return txnIncluded
-
-    def getMiningTXN(self):
         # Get new tranasaction ID
         txnID = generateTransactionID()
 
@@ -106,7 +75,150 @@ class Node:
         )
         return miningTxn
 
+    def floodTxn(self, txn, time):
+        """
+        Broadcast TXN to Neighbours
+        """
+        for peer in self.neighbors:
+            latency = self.calculateLatency(peer, size=1)
+            pushToEventQueue(
+                Event(
+                    time=time + latency,
+                    type=1,
+                    txn=txn,
+                    senderPeer=self,
+                    receiverPeer=peer,
+                )
+            )
+
+    def floodBlock(self, block, time):
+        """
+        Broadcast Block to Neighbours
+        """
+        for peer in self.neighbors:
+            latency = self.calculateLatency(
+               peer=peer, size=block.size
+            )
+            pushToEventQueue(
+                Event(
+                    time=time + latency,
+                    type=4,
+                    senderPeer=self,
+                    receiverPeer=peer,
+                    block=block,
+                )
+            )
+
+    def checkValidTxnsInBlock(self, block: Block):
+        """
+        Check if the Transaction 
+        inside the BLocks are valid
+        """
+        prevBlock: Block = self.blockchain.rcvdBlocks[block.prevBlockID]
+        for txn in block.txnList:
+            if txn.type == 1:
+                continue
+            if (
+                block.balance[txn.receiverPeerID] - txn.val
+                != prevBlock.balance[txn.receiverPeerID]
+            ):
+                return False
+            if (
+                block.balance[txn.senderPeerID] + txn.val
+                != prevBlock.balance[txn.senderPeerID]
+            ):
+                return False
+            if prevBlock.balance[txn.senderPeerID] - txn.val < 0:
+                return False
+        return True
+
+    def validateAndForward(self, block: Block, time):
+        """
+        Validate and forward Block to the N/W
+        """
+        # Add the block to the blockchain
+        self.blockchain.rcvdBlocks[block.blockID]=block
+        self.blockchain.rcvdBlocksTime[block.blockID]=time
+        self.g.add_edge(block.blockID,block.prevBlockID)
+
+        # Check if blockchain is in received blocks
+        if(block.prevBlockID not in self.blockchain.rcvdBlocks):
+            self.blockchain.orphanBlocks.add(block.blockID)
+            return
+        
+        # Check if txns inside the block are valid
+        if not self.checkValidTxnsInBlock(block):
+            self.blockchain.invalidBlocks.add(block.blockID)
+            del self.blockchain.rcvdBlocks[block.blockID]
+            return
+
+        # Check if the block is making a longer chain
+        if self.blockchain.lastBlock.length<block.length:
+            self.updateLongestChain(block)
+        self.floodBlock(block,time)
+
+        # After adding the block in chain,
+        # Process orphan blocks
+        self.processOrphanBlocks(time)
+
+    def processOrphanBlocks(self, time):
+        """
+        Process Blocks which didn't have parent
+        """
+        # List for storing all orphans
+        deleteOrphan=[]
+        for blockID in self.blockchain.orphanBlocks:
+            block: Block = self.blockchain.rcvdBlocks[blockID]
+            # Check if parent of the orphan block is invalid
+            if block.prevBlockID in self.blockchain.invalidBlocks:
+                # Add the orphan block to invalid block
+                self.blockchain.invalidBlocks.add(block.blockID)
+                del self.blockchain.rcvdBlocks[block.blockID]
+                deleteOrphan.append(block.blockID)
+                continue
+            # Check if parent in received blocks
+            if block.prevBlockID in self.blockchain.rcvdBlocks:
+                # Then orphan is not an orphan now
+                deleteOrphan.append(block.blockID)
+                # Check the txns
+                if not self.checkValidTxnsInBlock(block):
+                    self.blockchain.invalidBlocks.add(block.blockID)
+                    del self.blockchain.rcvdBlocks[block.blockID]
+                    continue
+            # Check if it's increasing the length
+            if self.blockchain.lastBlock.length<block.length:
+                self.updateLongestChain(block)
+            self.floodBlock(block, time)
+
+        for blockID in deleteOrphan:
+            del self.blockchain.orphanBlocks[blockID]
+
+    def updateLongestChain(self, block: Block):
+        """
+        Updates longest chain
+        """
+        if block.prevBlockID == self.blockchain.lastBlock.blockID:
+            for txn in block.txnList:
+                if txn.txnID in self.blockchain.pendingTxns:
+                    self.blockchain.pendingTxns.remove(txn.txnID)
+        else:
+            for txnID in self.blockchain.rcvdTxns:
+                self.blockchain.pendingTxns.add(txnID)
+            temp=copy.deepcopy(block)
+            while(True):
+                for txn in temp.txnList:
+                    if txn.txnID in self.blockchain.pendingTxns:
+                        self.blockchain.pendingTxns.remove(txn.txnID)
+                if(temp.prevBlockID==0):
+                    break
+                temp=self.blockchain.rcvdBlocks[temp.prevBlockID]
+        self.blockchain.lastBlock=block
+
     def eventHandler(self, event):
+        """
+        Redirects event to 
+        required functions
+        """
         if event.type == 0:
             self.generateTXN(event)
         elif event.type == 1:
@@ -120,84 +232,64 @@ class Node:
         else:
             raise ValueError(f"Event Type not Valid")
 
+    # Event - 0
     def generateTXN(self, event: Event):
         """
         Generates a Transaction and propagates to all it's peers
         """
         # Get the last balance of this node
-        selfBalance = self.blockchain[self.lastBlockID].balance[self.nodeID]
+        selfBalance = self.blockchain.lastBlock.balance[event.txn.senderPeerID]
         # Check if the balance satisfying the least condition
-        if selfBalance < 0:
+        if selfBalance <= 0:
             return
         # Randomly generate a txn value
         event.txn.val = randomGenerator.uniform(0, selfBalance)
-        # If the txn val satisifes g
-        if selfBalance > event.txn.val:
-            # Add it to received txn
-            self.receivedTXN.add(event.txn)
-            # Propagate the txn to all it's peers
-            for peer in self.neighbors:
-                latency = calculateLatency(senderPeer=self, receiverPeer=peer, m=1)
-                pushToEventQueue(
-                    Event(
-                        time=event.time + latency,
-                        type=1,
-                        txn=event.txn,
-                        senderPeer=self,
-                        receiverPeer=peer,
-                    )
-                )
 
+        if selfBalance<event.txn.val:
+            return
+
+        # Add it to received txn
+        self.blockchain.pendingTxns.add(event.txn.txnID)
+        self.blockchain.rcvdTxns[event.txn.txnID]=event.txn
+        # Propagate the txn to all it's peers
+        self.floodTxn(event.txn,event.time)
+
+    # Event - 1
     def receiveTXN(self, event: Event):
         """
         Receive Transaction Generated by other Peers
         and Propagates to all it's peers
         """
         # Check if the transaction is already received
-        if event.txn not in self.receivedTXN:
-            # Add it to the received TXN
-            self.receivedTXN.add(event.txn)
-            # Propagate the transaction to it's peers
-            for peer in self.neighbors:
-                # Calculate the latency
-                latency = calculateLatency(senderPeer=self, receiverPeer=peer, m=1)
-                # Push the transaction event to the queue
-                pushToEventQueue(
-                    Event(
-                        time=event.time + latency,
-                        type=1,
-                        txn=event.txn,
-                        senderPeer=self,
-                        receiverPeer=peer,
-                    )
-                )
+        if event.txn.txnID in self.blockchain.rcvdTxns:
+            return
+        if self.blockchain.lastBlock.balance[event.txn.senderPeerID]<event.txn.val:
+            return
+        # Add it to the received TXN
+        self.blockchain.pendingTxns.add(event.txn.txnID)
+        self.blockchain.rcvdTxns[event.txn.txnID]=event.txn
+        # Propagate the transaction to it's peers
+        self.floodTxn(event.txn, event.time)
 
+    # Event - 2
     def mineBlock(self, event: Event):
         """
-        Takes up a subset of transactions
-        and mine it in a new block
+        Mines a New Block using a 
+        subset of transactions from 
+        pending txn pool
         """
         #
-        # print(self.blockchain.keys())
+        # print("Event:mineBlock")
         t=event.time
-        lastBlock: Block = self.blockchain[self.lastBlockID]
+        lastBlock: Block = self.blockchain.lastBlock
 
-        # Get mining txn
-        miningTxn = self.getMiningTXN()
+        # Get coinbase txn
+        coinbaseTxn = self.getCoinbaseTxn()
         
         # Get the remaining TXN
-        remainingTxn = self.receivedTXN.difference(self.getAllIncludedTxn())
+        pendingTxns = self.blockchain.pendingTxns
 
-        # Find out the valid TXN
-        validTxn = set(
-            [
-                txn
-                for txn in remainingTxn
-                if txn.val <= lastBlock.balance[txn.senderPeerID]
-            ]
-        )
-
-        numOfTxn = len(validTxn)
+        numOfTxn = len(pendingTxns)
 
         # Get the maximum block size
         blockSize = json.load(open(params_path))["block-size"]
@@ -206,13 +298,24 @@ class Node:
         # it is does not exceed the blocksize-2
         # Why 2? 1 for the block itself and 1 for the mining TXN
         if numOfTxn > 1:
-            numOfTxn = min(random.randint(1, len(validTxn)), blockSize - 2)
+            numOfTxn = min(random.randint(1, len(pendingTxns)), blockSize - 2)
 
-        # Get transaction upto numOfTxn
-        includedTxn = set(random.sample(validTxn,numOfTxn))
-        # print("NODE "+ str(self.nodeID)+"TXN TO BE ADDED WHILE MINING:",len(includedTxn))
+        currentBalance = lastBlock.balance
+        txnToBeIncluded = set()
+        for txnID in pendingTxns:
+            txn: Transaction = self.blockchain.rcvdTxns[txnID]
+            if txn.type==1:
+                currentBalance[txn.receiverPeerID]+=txn.val
+                continue
+            if currentBalance[txn.senderPeerID]<txn.val:
+                break
+            currentBalance[txn.senderPeerID]-=txn.val
+            currentBalance[txn.receiverPeerID]+=txn.val
+            txnToBeIncluded.add(txn)
+            if len(txnToBeIncluded)==blockSize-2:
+                break
 
-        includedTxn.add(miningTxn)
+        txnToBeIncluded.add(coinbaseTxn)
 
         # Get new block ID
         blockID = generateBlockID()
@@ -220,82 +323,37 @@ class Node:
         # Prepare a block with the transaction chosen
         block = Block(
             blockID=blockID,
-            prevBlockID=self.lastBlockID,
+            prevBlockID=lastBlock.blockID,
             prevLengthOfChain=lastBlock.length,
-            txnList=includedTxn,
+            txnList=txnToBeIncluded,
             miner=self,
             prevBlockBalance=lastBlock.balance,\
         )
 
-        # Check if the block is all valid
-        while(not self.isBlockValid(block)):
-            numOfTxn = min(random.randint(1, len(validTxn)), blockSize - 2)
-            includedTxn = set(random.sample(validTxn,numOfTxn))
-            includedTxn.add(miningTxn)
-            # Prepare a block with the transaction chosen
-            block = Block(
-                blockID=blockID,
-                prevBlockID=self.lastBlockID,
-                prevLengthOfChain=lastBlock.length,
-                txnList=includedTxn,
-                miner=self,
-                prevBlockBalance=lastBlock.balance,\
-            )
-        
         # Add the latency for the block propagation to it's peers
         t += randomGenerator.exponential(self.mineTime)
         # Add to the event queue with type = 3
         pushToEventQueue(Event(time=t, type=3, block=block, receiverPeer=self))
 
+    # Event - 3
     def finishMine(self, event: Event):
-        time=event.time
+        """
+        Finish Mining a Block.
+        Propagate it to neighbours.
+        Update longest chain if needed
+        """
         block=event.block
-        if not self.isBlockValid(block):
-            return
-        if block.blockID in self.blockchain:
-            return
-        self.blockchain[block.blockID] = block
-        self.g.add_edge(block.blockID, block.prevBlockID)
+        self.blockCreated+=1
+        if(self.blockchain.lastBlock.blockID==block.prevBlockID):
+            self.validateAndForward(block,event.time)
 
-        if(block.prevBlockID == self.lastBlockID):
-            self.lastBlockID = block.blockID
-            for peer in self.neighbors:
-                latency = calculateLatency(
-                    senderPeer=self, receiverPeer=peer, m=block.size
-                )
-                pushToEventQueue(
-                    Event(
-                        time=time + latency,
-                        type=4,
-                        senderPeer=self,
-                        receiverPeer=peer,
-                        block=block,
-                    )
-                )
-
+    # Event - 4
     def receiveBlock(self, event: Event):
+        """
+        Receive a Block.
+        Validate and Update Chain if needed.
+        """
         block = event.block
-        time = event.time
-        if not self.isBlockValid(block):
+        if block.blockID in self.blockchain.rcvdBlocks:
             return
-        if block.blockID in self.blockchain:
-            return
-        lastBlock: Block = self.blockchain[self.lastBlockID]
-        self.blockchain[block.blockID] = block
-        self.g.add_edge(block.blockID, block.prevBlockID)
-        if (block.length > lastBlock.length):
-            self.lastBlockID = block.blockID
-            for peer in self.neighbors:
-                latency = calculateLatency(
-                    senderPeer=self, receiverPeer=peer, m=block.size
-                )
-                pushToEventQueue(
-                    Event(
-                        time=time + latency,
-                        type=4,
-                        senderPeer=self,
-                        receiverPeer=peer,
-                        block=block,
-                    )
-                )
-            pushToEventQueue(Event(time=time, type=2, receiverPeer=self))
+        self.validateAndForward(block,event.time)
