@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 
 class Simulator:
     def __init__(self, n, ttx, z0, z1, I,simTime):
+        print("Preparing Simulator ..")
         self.n=n
         self.genesis = Block(blockID=1, prevBlockID=0, txnList=set(), prevLengthOfChain=0, miner=None, prevBlockBalance = [100]*n)
-        # print(self.genesis)
 
         lowSpeed = [True for _ in range(int(n*z0))]+[False for _ in range(n-int(n*z0))]
         lowCPU = [True for _ in range(int(n*z1))]+[False for _ in range(n-int(n*z1))]
@@ -33,8 +33,10 @@ class Simulator:
         self.ttx = ttx
         self.I = I
         self.simTime=simTime
+        print("Simulator Prepared\n")
 
     def generateNetwork(self):
+        print("Generating Graph ..")
         while True:
             self.G = nx.Graph()
             self.G.add_nodes_from(range(self.n))
@@ -51,8 +53,10 @@ class Simulator:
                         self.nodes[peer].neighbors.add(self.nodes[node])
             if nx.is_connected(self.G):
                 break
+        print("Graph Generated\n")
 
     def generateTransaction(self):
+        print("Generating Transaction Timestamps ..")
         self.txnEventCounter=[]
         for p in self.nodes:
             t = randomGenerator.exponential(self.ttx)
@@ -73,17 +77,21 @@ class Simulator:
                 totalTxnEventCount+=1
                 t+=randomGenerator.exponential(self.ttx)
             self.txnEventCounter.append(totalTxnEventCount)
+        print("Transaction Timestamps Generated\n")
 
     def generateBlock(self):
+        print("Generating First Mining Timestamp for each Node ..")
         i=0
         for p in self.nodes:
             t = i
             i+=1
             event=Event(time=t,type=2,receiverPeer=p)
             pushToEventQueue(event)
+        print("Mining Timestamps Generated\n")
 
 
     def simulate(self):
+        print("Event Simulator Started ..")
         time = 0
         while(time<=self.simTime and globalEventQueue):
             time, event = popFromEventQueue()
@@ -93,21 +101,25 @@ class Simulator:
             time, event = popFromEventQueue()
             if event.type == 3 or event.type == 4:
                 event.receiverPeer.eventHandler(event)
+        print("Event Simulator Finished\n")
 
     def saveNetworkGraph(self): 
         plt.figure()
         nx.draw(self.G, with_labels=True)
         plt.savefig('outputs/graph.png')
+        print("Graph figure saved in outputs/graph.png\n")
 
     def saveBlockchainGraph(self):
         for node in self.nodes:
             plt.figure()
             nx.draw(node.g, pos=nx.kamada_kawai_layout(node.g), node_size=self.n, node_color='red')
-            plt.savefig(f'./outputs/blockchain_node{node.nodeID}.png')
+            plt.savefig(f'./outputs/blockchain_node({node.nodeID}).png')
+        print("Blockchain figure for each node saved in outputs/blockchain_node(i).png\n")
 
     def generateStats(self):
+        print("Generating Stats ..")
         for node in self.nodes:
-            f=open(f"outputs/log_node{node.nodeID}.txt","w")
+            f=open(f"outputs/log_node({node.nodeID}).txt","w")
             if node.lowCPU:
                 f.write(f"Hashing Power - {self.lowHashPower}\n")
             else:
@@ -160,3 +172,4 @@ class Simulator:
             f.write(f"Blocks Mined - {node.blockCreated}\n")
             f.write(f"Blocks Mined in the Longest Chain - {blockMinedByNodeInChain}\n")
             f.close()
+        print("Stats Generated. Saved in outputs/log_node(i).txt\n")

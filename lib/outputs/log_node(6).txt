@@ -1,0 +1,35 @@
+Hashing Power - 0.18181818181818182
+Speed - Low
+
+Total Transaction Event:612
+
+**Blocks in the Blockchain**
+Block ID:1,Previous Block ID:0,Miner ID: None,Number of TXNs:0,Time:0
+Block ID:6,Previous Block ID:1,Miner ID:4,Number of TXNs:1,Time:458.56786484558006
+Block ID:12,Previous Block ID:6,Miner ID:4,Number of TXNs:196,Time:886.1586459364378
+Block ID:21,Previous Block ID:12,Miner ID:6,Number of TXNs:344,Time:1802.6549657832688
+Block ID:35,Previous Block ID:21,Miner ID:3,Number of TXNs:481,Time:2543.671702125071
+Block ID:33,Previous Block ID:21,Miner ID:1,Number of TXNs:449,Time:2994.958076136128
+Block ID:40,Previous Block ID:35,Miner ID:3,Number of TXNs:385,Time:3217.923502547524
+Block ID:49,Previous Block ID:40,Miner ID:3,Number of TXNs:413,Time:4161.040873726664
+Block ID:66,Previous Block ID:49,Miner ID:1,Number of TXNs:390,Time:4851.448551610823
+Block ID:72,Previous Block ID:66,Miner ID:5,Number of TXNs:372,Time:6046.230226327519
+Block ID:71,Previous Block ID:66,Miner ID:4,Number of TXNs:355,Time:6268.143225858442
+Block ID:82,Previous Block ID:72,Miner ID:5,Number of TXNs:447,Time:8663.43449900906
+
+**Blocks in the Longest Chain**
+Block ID:82,Previous Block ID:72,Miner ID:5,Number of TXNs:447,Time:8663.43449900906
+Block ID:72,Previous Block ID:66,Miner ID:5,Number of TXNs:372,Time:6046.230226327519
+Block ID:66,Previous Block ID:49,Miner ID:1,Number of TXNs:390,Time:4851.448551610823
+Block ID:49,Previous Block ID:40,Miner ID:3,Number of TXNs:413,Time:4161.040873726664
+Block ID:40,Previous Block ID:35,Miner ID:3,Number of TXNs:385,Time:3217.923502547524
+Block ID:35,Previous Block ID:21,Miner ID:3,Number of TXNs:481,Time:2543.671702125071
+Block ID:21,Previous Block ID:12,Miner ID:6,Number of TXNs:344,Time:1802.6549657832688
+Block ID:12,Previous Block ID:6,Miner ID:4,Number of TXNs:196,Time:886.1586459364378
+Block ID:6,Previous Block ID:1,Miner ID:4,Number of TXNs:1,Time:458.56786484558006
+
+Total Blocks in the Chain:12
+Total Blocks in the Longest Chain:9
+
+Blocks Mined - 1
+Blocks Mined in the Longest Chain - 1

@@ -137,12 +137,8 @@ class Node:
         self.blockchain.rcvdBlocksTime[block.blockID]=time
         self.g.add_edge(block.blockID,block.prevBlockID)
 
-        print(self.nodeID,block.prevBlockID,block.blockID)
-
-
         # Check if blockchain is in received blocks
         if(block.prevBlockID not in self.blockchain.rcvdBlocks):
-            print("Add in Orphan")
             self.blockchain.orphanBlocks.add(block.blockID)
             return
         
@@ -168,7 +164,6 @@ class Node:
         Process Blocks which didn't have parent
         """
         # List for storing all orphans
-        print("Process orphans")
         deleteOrphan=[]
         for blockID in self.blockchain.orphanBlocks:
             block: Block = self.blockchain.rcvdBlocks[blockID]
@@ -215,20 +210,13 @@ class Node:
             for txnID in self.blockchain.rcvdTxns:
                 self.blockchain.pendingTxns.add(txnID)
             temp=copy.deepcopy(block)
-            print("for node nodeid:",self.nodeID)
-            a=[]
             while(True):
-                a.append(temp.blockID)
                 for txn in temp.txnList:
                     if txn.txnID in self.blockchain.pendingTxns:
                         self.blockchain.pendingTxns.remove(txn.txnID)
                 if(temp.prevBlockID==0):
                     break
-                try:
-                    temp=self.blockchain.rcvdBlocks[temp.prevBlockID]
-                except:
-                    print(a)
-                    exit()
+                temp=self.blockchain.rcvdBlocks[temp.prevBlockID]
         self.blockchain.lastBlock=block
 
     def eventHandler(self, event):

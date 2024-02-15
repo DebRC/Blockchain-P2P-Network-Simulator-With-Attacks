@@ -8,7 +8,7 @@ parser.add_argument('-z0', '--percentage_slow', default=0.5, type=float, help='P
 parser.add_argument('-z1', '--percentage_lowcpu', default=0.5, type=float, help='Percentage of Low Power Nodes')
 parser.add_argument('-ttx', '--mean_inter_arrival', default=10, type=float, help='Mean Inter-Arrival Time Between Transactions')
 parser.add_argument('-I', '--average_block_mining_time', default=600, type=float, help='Mean Time Taken to Mine a Block')
-parser.add_argument('-T', '--simulation_time', default=60000, type=float, help='Time for Simulation')
+parser.add_argument('-T', '--simulation_time', default=6000, type=float, help='Time for Simulation')
 
 args = parser.parse_args()
 
@@ -25,5 +25,5 @@ simulator.saveNetworkGraph()
 simulator.generateTransaction()
 simulator.generateBlock()
 simulator.simulate()
-simulator.generateStats()
 simulator.saveBlockchainGraph()
+simulator.generateStats()
