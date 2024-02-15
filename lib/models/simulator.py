@@ -1,5 +1,6 @@
 import sys
 sys.path.append("../helper")
+sys.path.append("../outputs")
 from helper.utils import *
 from models.event import Event
 from models.transaction import Transaction
@@ -104,22 +105,28 @@ class Simulator:
         print("Event Simulator Finished\n")
 
     def saveNetworkGraph(self): 
+        output_dir = os.path.dirname(os.path.abspath(__file__))
+        outputs_path = os.path.join(output_dir, "../outputs", "graph.png")
         plt.figure()
         nx.draw(self.G, with_labels=True)
-        plt.savefig('outputs/graph.png')
+        plt.savefig(outputs_path)
         print("Graph figure saved in outputs/graph.png\n")
 
     def saveBlockchainGraph(self):
         for node in self.nodes:
             plt.figure()
             nx.draw(node.g, pos=nx.kamada_kawai_layout(node.g), node_size=self.n, node_color='red')
-            plt.savefig(f'./outputs/blockchain_node({node.nodeID}).png')
+            output_dir = os.path.dirname(os.path.abspath(__file__))
+            outputs_path = os.path.join(output_dir, "../outputs", f"blockchain_node({node.nodeID}).png")
+            plt.savefig(outputs_path)
         print("Blockchain figure for each node saved in outputs/blockchain_node(i).png\n")
 
     def generateStats(self):
         print("Generating Stats ..")
         for node in self.nodes:
-            f=open(f"outputs/log_node({node.nodeID}).txt","w")
+            output_dir = os.path.dirname(os.path.abspath(__file__))
+            outputs_path = os.path.join(output_dir, "../outputs", f"log_node({node.nodeID}).txt")
+            f=open(outputs_path,"w")
             if node.lowCPU:
                 f.write(f"Hashing Power - {self.lowHashPower}\n")
             else:
