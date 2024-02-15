@@ -59,3 +59,7 @@ class Event:
         if self.receiverPeer:
             res+="ReceiverPeer:"+str(self.receiverPeer.nodeID)+"\n"
         return res
+    
+    def __lt__(self, other):
+        # Compare events based on their time attribute
+        return self.time <= other.time

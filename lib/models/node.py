@@ -115,21 +115,17 @@ class Node:
         inside the BLocks are valid
         """
         prevBlock: Block = self.blockchain.rcvdBlocks[block.prevBlockID]
+        prevBlockBalance = list(prevBlock.balance)
+        currentBalance = list(block.balance)
         for txn in block.txnList:
             if txn.type == 1:
+                prevBlockBalance[txn.receiverPeerID]+=txn.val
                 continue
-            if (
-                block.balance[txn.receiverPeerID] - txn.val
-                != prevBlock.balance[txn.receiverPeerID]
-            ):
-                return False
-            if (
-                block.balance[txn.senderPeerID] + txn.val
-                != prevBlock.balance[txn.senderPeerID]
-            ):
-                return False
-            if prevBlock.balance[txn.senderPeerID] - txn.val < 0:
-                return False
+            prevBlockBalance[txn.receiverPeerID]+=txn.val
+            prevBlockBalance[txn.senderPeerID]-=txn.val
+        for i in range(len(prevBlockBalance)):
+            if prevBlockBalance[i]!=currentBalance[i] or currentBalance[i]<0:
+                return False        
         return True
 
     def validateAndForward(self, block: Block, time):
@@ -141,8 +137,12 @@ class Node:
         self.blockchain.rcvdBlocksTime[block.blockID]=time
         self.g.add_edge(block.blockID,block.prevBlockID)
 
+        print(self.nodeID,block.prevBlockID,block.blockID)
+
+
         # Check if blockchain is in received blocks
         if(block.prevBlockID not in self.blockchain.rcvdBlocks):
+            print("Add in Orphan")
             self.blockchain.orphanBlocks.add(block.blockID)
             return
         
@@ -155,6 +155,8 @@ class Node:
         # Check if the block is making a longer chain
         if self.blockchain.lastBlock.length<block.length:
             self.updateLongestChain(block)
+            event=Event(time=time,type=2,receiverPeer=self)
+            pushToEventQueue(event)
         self.floodBlock(block,time)
 
         # After adding the block in chain,
@@ -166,6 +168,7 @@ class Node:
         Process Blocks which didn't have parent
         """
         # List for storing all orphans
+        print("Process orphans")
         deleteOrphan=[]
         for blockID in self.blockchain.orphanBlocks:
             block: Block = self.blockchain.rcvdBlocks[blockID]
@@ -176,22 +179,29 @@ class Node:
                 del self.blockchain.rcvdBlocks[block.blockID]
                 deleteOrphan.append(block.blockID)
                 continue
-            # Check if parent in received blocks
-            if block.prevBlockID in self.blockchain.rcvdBlocks:
-                # Then orphan is not an orphan now
-                deleteOrphan.append(block.blockID)
-                # Check the txns
-                if not self.checkValidTxnsInBlock(block):
-                    self.blockchain.invalidBlocks.add(block.blockID)
-                    del self.blockchain.rcvdBlocks[block.blockID]
-                    continue
+
+            # If block is still orphan
+            if block.prevBlockID not in self.blockchain.rcvdBlocks:
+                continue
+            
+            # Not an orphan
+            # Then orphan is not an orphan
+            #  now
+            deleteOrphan.append(block.blockID)
+            # Check the txns
+            if not self.checkValidTxnsInBlock(block):
+                self.blockchain.invalidBlocks.add(block.blockID)
+                del self.blockchain.rcvdBlocks[block.blockID]
+                continue
             # Check if it's increasing the length
             if self.blockchain.lastBlock.length<block.length:
                 self.updateLongestChain(block)
+                event=Event(time=time,type=2,receiverPeer=self)
+                pushToEventQueue(event)
             self.floodBlock(block, time)
 
         for blockID in deleteOrphan:
-            del self.blockchain.orphanBlocks[blockID]
+            self.blockchain.orphanBlocks.remove(blockID)
 
     def updateLongestChain(self, block: Block):
         """
@@ -205,13 +215,20 @@ class Node:
             for txnID in self.blockchain.rcvdTxns:
                 self.blockchain.pendingTxns.add(txnID)
             temp=copy.deepcopy(block)
+            print("for node nodeid:",self.nodeID)
+            a=[]
             while(True):
+                a.append(temp.blockID)
                 for txn in temp.txnList:
                     if txn.txnID in self.blockchain.pendingTxns:
                         self.blockchain.pendingTxns.remove(txn.txnID)
                 if(temp.prevBlockID==0):
                     break
-                temp=self.blockchain.rcvdBlocks[temp.prevBlockID]
+                try:
+                    temp=self.blockchain.rcvdBlocks[temp.prevBlockID]
+                except:
+                    print(a)
+                    exit()
         self.blockchain.lastBlock=block
 
     def eventHandler(self, event):
@@ -243,11 +260,8 @@ class Node:
         if selfBalance <= 0:
             return
         # Randomly generate a txn value
-        event.txn.val = randomGenerator.uniform(0, selfBalance)
-
-        if selfBalance<event.txn.val:
-            return
-
+        event.txn.val = randomGenerator.uniform(0, selfBalance/10+1)
+        
         # Add it to received txn
         self.blockchain.pendingTxns.add(event.txn.txnID)
         self.blockchain.rcvdTxns[event.txn.txnID]=event.txn
@@ -300,15 +314,13 @@ class Node:
         if numOfTxn > 1:
             numOfTxn = min(random.randint(1, len(pendingTxns)), blockSize - 2)
 
-        currentBalance = lastBlock.balance
+        currentBalance = list(lastBlock.balance)
         txnToBeIncluded = set()
+
         for txnID in pendingTxns:
             txn: Transaction = self.blockchain.rcvdTxns[txnID]
-            if txn.type==1:
-                currentBalance[txn.receiverPeerID]+=txn.val
+            if currentBalance[txn.senderPeerID]-txn.val<0:
                 continue
-            if currentBalance[txn.senderPeerID]<txn.val:
-                break
             currentBalance[txn.senderPeerID]-=txn.val
             currentBalance[txn.receiverPeerID]+=txn.val
             txnToBeIncluded.add(txn)
@@ -320,6 +332,8 @@ class Node:
         # Get new block ID
         blockID = generateBlockID()
 
+        currentBalance[coinbaseTxn.receiverPeerID]+=coinbaseTxn.val
+
         # Prepare a block with the transaction chosen
         block = Block(
             blockID=blockID,
@@ -327,7 +341,7 @@ class Node:
             prevLengthOfChain=lastBlock.length,
             txnList=txnToBeIncluded,
             miner=self,
-            prevBlockBalance=lastBlock.balance,\
+            prevBlockBalance=list(lastBlock.balance),\
         )
 
         # Add the latency for the block propagation to it's peers
@@ -342,10 +356,10 @@ class Node:
         Propagate it to neighbours.
         Update longest chain if needed
         """
-        block=event.block
-        self.blockCreated+=1
+        block: Block=event.block
         if(self.blockchain.lastBlock.blockID==block.prevBlockID):
             self.validateAndForward(block,event.time)
+            self.blockCreated+=1
 
     # Event - 4
     def receiveBlock(self, event: Event):

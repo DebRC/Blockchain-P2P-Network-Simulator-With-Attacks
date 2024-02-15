@@ -17,10 +17,11 @@ class Simulator:
 
         lowSpeed = [True for _ in range(int(n*z0))]+[False for _ in range(n-int(n*z0))]
         lowCPU = [True for _ in range(int(n*z1))]+[False for _ in range(n-int(n*z1))]
+        randomGenerator.shuffle(lowSpeed)
+        randomGenerator.shuffle(lowCPU)
 
         self.lowHashPower=1/(10*n-9*int(z1*n))
         self.highHashPower=10*self.lowHashPower
-        # print(lowHashPower,highHashPower)
 
         mineTime=[I/self.lowHashPower if lowCPU[i] else I/self.highHashPower for i in range(n)]
         self.latencyMatrix = randomGenerator.uniform(10,500,[n,n])
@@ -34,37 +35,28 @@ class Simulator:
         self.simTime=simTime
 
     def generateNetwork(self):
-        graphGenerated=False
-        while(not graphGenerated):
+        while True:
             self.G = nx.Graph()
             self.G.add_nodes_from(range(self.n))
             for node in self.nodes:
                 node.neighbors = set()
             for node in range(self.n):
                 l = randomGenerator.integers(3, 7)
-                peers = random.sample(set(range(self.n)) - {node}, l)
-                for peer in peers:
-                    if(peer not in self.nodes[node].neighbors and node not in self.nodes[peer].neighbors):
+                # peers = set()
+                for peer in range(self.n):
+                    if peer!=node and len(self.nodes[peer].neighbors)<6 and len(self.nodes[node].neighbors)<l \
+                        and peer not in self.nodes[node].neighbors and node not in self.nodes[peer].neighbors:
                         self.G.add_edge(node, peer)
                         self.nodes[node].neighbors.add(self.nodes[peer])
                         self.nodes[peer].neighbors.add(self.nodes[node])
-            graphGenerated=True
-            for node in range(self.n):
-                if len(self.nodes[node].neighbors) not in range(3,7):
-                    graphGenerated=False
-                    break
-            if not nx.is_connected(self.G):
-                graphGenerated=False
-        # for node in range(self.n):
-        #     # res=[]
-        #     for p in self.nodes[node].neighbors:
-        #         res.append(p.nodeID)
-        #     # print(node,":",res)
-        # print(self.G)       
+            if nx.is_connected(self.G):
+                break
 
     def generateTransaction(self):
+        self.txnEventCounter=[]
         for p in self.nodes:
             t = randomGenerator.exponential(self.ttx)
+            totalTxnEventCount=0
             while(t<=self.simTime):
                 randomNode=self.nodes[randomGenerator.integers(0, len(self.nodes))]
                 while(randomNode.nodeID==p.nodeID):
@@ -78,40 +70,29 @@ class Simulator:
                 )
                 event=Event(time=t,type=0,senderPeer=p,receiverPeer=randomNode,txn=eventTXN)
                 pushToEventQueue(event=event)
+                totalTxnEventCount+=1
                 t+=randomGenerator.exponential(self.ttx)
+            self.txnEventCounter.append(totalTxnEventCount)
 
     def generateBlock(self):
-        # res=[]
+        i=0
         for p in self.nodes:
-            # res.append(p.mineTime)
-            # res2=[]
-            t = random.randint(1,p.mineTime)
-            while(t<=self.simTime):
-                # res2.append(t)
-                event=Event(time=t,type=2,receiverPeer=p)
-                # print(event)
-                pushToEventQueue(event)
-                t+=randomGenerator.exponential(p.mineTime)
-            # print(p.nodeID,":",res2)
-        # print("MineTime:",res)
+            t = i
+            i+=1
+            event=Event(time=t,type=2,receiverPeer=p)
+            pushToEventQueue(event)
+
 
     def simulate(self):
         time = 0
         while(time<=self.simTime and globalEventQueue):
             time, event = popFromEventQueue()
-            # if event.type==2 or event.type==3 or event.type==4:
-            # print(event)
             event.receiverPeer.eventHandler(event)
             
         while(globalEventQueue):
             time, event = popFromEventQueue()
             if event.type == 3 or event.type == 4:
                 event.receiverPeer.eventHandler(event)
-        # for p in self.nodes:
-        #     res=[]
-        #     for blockID in p.blockchain.rcvdBlocks:
-        #         res.append(str(p.blockchain.rcvdBlocks[blockID].prevBlockID)+":"+str(blockID))
-        #     print(res)
 
     def saveNetworkGraph(self): 
         plt.figure()
@@ -122,7 +103,7 @@ class Simulator:
         for node in self.nodes:
             plt.figure()
             nx.draw(node.g, pos=nx.kamada_kawai_layout(node.g), node_size=self.n, node_color='red')
-            plt.savefig(f'./outputs/blockchain_{node.nodeID}.png')
+            plt.savefig(f'./outputs/blockchain_node{node.nodeID}.png')
 
     def generateStats(self):
         for node in self.nodes:
@@ -136,9 +117,15 @@ class Simulator:
             else:
                 f.write(f"Speed - High\n")
             f.write("\n")
+            f.write("Total Transaction Event:"+str(self.txnEventCounter[node.nodeID])+"\n")
+            # f.write("Total Mining Event:"+str(self.mineEventCounter[node.nodeID])+"\n")
+            f.write("\n")
+            totalBlocks=0
+            totalBlocksInLongestChain=0
             f.write("**Blocks in the Blockchain**\n")
             for blockID in node.blockchain.rcvdBlocks:
                 block=node.blockchain.rcvdBlocks[blockID]
+                totalBlocks+=1
                 f.write("Block ID:"+str(blockID)+","+"Previous Block ID:"+str(block.prevBlockID)+",")
                 if(block.miner==None):
                     f.write("Miner ID: None")
@@ -153,6 +140,7 @@ class Simulator:
             block = node.blockchain.lastBlock
             while(True):
                 f.write("Block ID:"+str(block.blockID)+","+"Previous Block ID:"+str(block.prevBlockID)+",")
+                totalBlocksInLongestChain+=1
                 if(block.miner==None):
                     f.write("Miner ID: None")
                 else:
@@ -165,6 +153,9 @@ class Simulator:
                 block = node.blockchain.rcvdBlocks[block.prevBlockID]
                 if block.prevBlockID==0:
                     break
+            f.write("\n")
+            f.write("Total Blocks in the Chain:"+str(totalBlocks)+"\n")
+            f.write("Total Blocks in the Longest Chain:"+str(totalBlocksInLongestChain)+"\n")
             f.write("\n")
             f.write(f"Blocks Mined - {node.blockCreated}\n")
             f.write(f"Blocks Mined in the Longest Chain - {blockMinedByNodeInChain}\n")

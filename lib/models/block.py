@@ -37,29 +37,13 @@ class Block:
         for txn in self.txnList:
             self.size += txn.size
 
-        if(not self.checkMaxSize()):
-            return None
-        if(not self.updateBalance()):
-            return None
+        self.updateBalance()
 
     def updateBalance(self):
         for txn in self.txnList:
             if txn.type == 0:
                 self.balance[txn.senderPeerID] -= txn.val
-                if self.balance[txn.senderPeerID]<0:
-                    return False
-            # self.txnPool.add(txn)
             self.balance[txn.receiverPeerID] += txn.val
-        return True
-
-    def checkMaxSize(self):
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        params_path = os.path.join(script_dir,"../helper",'params.json')
-        maxBlockSize = json.load(open(params_path))['block-size']
-
-        if self.size > maxBlockSize:
-            return False
-        return True
         
     def __str__(self):
         res=""
