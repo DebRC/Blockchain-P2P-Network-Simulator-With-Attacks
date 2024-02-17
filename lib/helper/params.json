@@ -1,7 +1,7 @@
 {
     "default-seed": 42,
     "txn-size": 1,
-    "block-size": 1024,
+    "block-size": 1000,
     "mining-fee": 50,
     "hashing-power": 10,
     "starting-balance": 50

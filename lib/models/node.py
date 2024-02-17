@@ -27,15 +27,12 @@ class Node:
         self.lowSpeed = lowSpeed
         self.lowCPU = lowCPU
         self.mineTime = mineTime
-        self.blockCreated = 0
 
         self.neighbors = set()
         self.blockchain = BlockChain()
         self.latencyMatrix = latencyMatrix
 
         self.g = nx.DiGraph()
-
-
         self.addGenesisBlock(genesisBlock)
 
     def addGenesisBlock(self, genesisBlock):
@@ -46,14 +43,19 @@ class Node:
 
     def calculateLatency(self,peer,size):
         """
-        Return Latency between two Nodes
+        Return latency between two Nodes in seconds\n
+        peer (Node): Destination\n
+        size: Packet Size in KB\n
+        Return: float (seconds)
         """
         if(self.lowSpeed or peer.lowSpeed):
             c = 5
         else:
-            c = 100        
+            c = 100
         d = randomGenerator.exponential(96/c)
-        return self.latencyMatrix[self.nodeID][peer.nodeID] + abs(size)/c + d
+        # Convert KB to bits
+        size = size*1000*8
+        return (self.latencyMatrix[self.nodeID][peer.nodeID] + size/c + d)/1000
 
     def getCoinbaseTxn(self):
         """
@@ -80,6 +82,7 @@ class Node:
         Broadcast TXN to Neighbours
         """
         for peer in self.neighbors:
+            # TXN Size KB
             latency = self.calculateLatency(peer, size=1)
             pushToEventQueue(
                 Event(
@@ -96,6 +99,7 @@ class Node:
         Broadcast Block to Neighbours
         """
         for peer in self.neighbors:
+            # Sending block size in KB
             latency = self.calculateLatency(
                peer=peer, size=block.size
             )
@@ -137,8 +141,8 @@ class Node:
         self.blockchain.rcvdBlocksTime[block.blockID]=time
         self.g.add_edge(block.blockID,block.prevBlockID)
 
-        # Check if blockchain is in received blocks
-        if(block.prevBlockID not in self.blockchain.rcvdBlocks):
+        # Check if blockchain is in received blocks or block parent is an orphan
+        if (block.prevBlockID not in self.blockchain.rcvdBlocks) or (block.prevBlockID in self.blockchain.orphanBlocks):
             self.blockchain.orphanBlocks.add(block.blockID)
             return
         
@@ -176,7 +180,7 @@ class Node:
                 continue
 
             # If block is still orphan
-            if block.prevBlockID not in self.blockchain.rcvdBlocks:
+            if block.prevBlockID not in self.blockchain.rcvdBlocks or block.prevBlockID in self.blockchain.orphanBlocks:
                 continue
             
             # Not an orphan
@@ -300,7 +304,7 @@ class Node:
         # it is does not exceed the blocksize-2
         # Why 2? 1 for the block itself and 1 for the mining TXN
         if numOfTxn > 1:
-            numOfTxn = min(random.randint(1, len(pendingTxns)), blockSize - 2)
+            numOfTxn = min(random.randint(1, len(pendingTxns)), blockSize - 1)
 
         currentBalance = list(lastBlock.balance)
         txnToBeIncluded = set()
@@ -347,7 +351,6 @@ class Node:
         block: Block=event.block
         if(self.blockchain.lastBlock.blockID==block.prevBlockID):
             self.validateAndForward(block,event.time)
-            self.blockCreated+=1
 
     # Event - 4
     def receiveBlock(self, event: Event):

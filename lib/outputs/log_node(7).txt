@@ -1,35 +1,41 @@
-Hashing Power - 0.01818181818181818
+Hashing Power - 0.1
 Speed - High
 
 Total Transaction Event:582
 
 **Blocks in the Blockchain**
 Block ID:1,Previous Block ID:0,Miner ID: None,Number of TXNs:0,Time:0
-Block ID:6,Previous Block ID:1,Miner ID:4,Number of TXNs:1,Time:732.1686008280806
-Block ID:12,Previous Block ID:6,Miner ID:4,Number of TXNs:196,Time:1151.0082833746671
-Block ID:21,Previous Block ID:12,Miner ID:6,Number of TXNs:344,Time:2328.7031701898322
-Block ID:35,Previous Block ID:21,Miner ID:3,Number of TXNs:481,Time:3045.7841623728796
-Block ID:33,Previous Block ID:21,Miner ID:1,Number of TXNs:449,Time:3122.1050241128223
-Block ID:40,Previous Block ID:35,Miner ID:3,Number of TXNs:385,Time:3700.093270219863
-Block ID:49,Previous Block ID:40,Miner ID:3,Number of TXNs:413,Time:4649.837435263363
-Block ID:66,Previous Block ID:49,Miner ID:1,Number of TXNs:390,Time:4926.847751299173
-Block ID:72,Previous Block ID:66,Miner ID:5,Number of TXNs:372,Time:5955.208078627938
-Block ID:71,Previous Block ID:66,Miner ID:4,Number of TXNs:355,Time:6598.639463048403
-Block ID:82,Previous Block ID:72,Miner ID:5,Number of TXNs:447,Time:8574.54484991761
+Block ID:8,Previous Block ID:1,Miner ID:6,Number of TXNs:5,Time:319.08927475323753
+Block ID:19,Previous Block ID:8,Miner ID:4,Number of TXNs:277,Time:975.0991361209382
+Block ID:16,Previous Block ID:8,Miner ID:8,Number of TXNs:277,Time:978.5345985236665
+Block ID:23,Previous Block ID:16,Miner ID:8,Number of TXNs:382,Time:1047.7952481555483
+Block ID:36,Previous Block ID:23,Miner ID:0,Number of TXNs:305,Time:1779.7529850902695
+Block ID:46,Previous Block ID:36,Miner ID:1,Number of TXNs:493,Time:2037.5335494179044
+Block ID:57,Previous Block ID:46,Miner ID:7,Number of TXNs:327,Time:2095.8978447266277
+Block ID:68,Previous Block ID:57,Miner ID:9,Number of TXNs:187,Time:2540.027077805075
+Block ID:79,Previous Block ID:68,Miner ID:0,Number of TXNs:299,Time:2681.239098809356
+Block ID:91,Previous Block ID:79,Miner ID:6,Number of TXNs:198,Time:2796.27952481265
+Block ID:95,Previous Block ID:91,Miner ID:3,Number of TXNs:89,Time:3376.437035168706
+Block ID:102,Previous Block ID:95,Miner ID:3,Number of TXNs:328,Time:4956.606729562033
+Block ID:120,Previous Block ID:102,Miner ID:1,Number of TXNs:688,Time:6383.031976081824
 
 **Blocks in the Longest Chain**
-Block ID:82,Previous Block ID:72,Miner ID:5,Number of TXNs:447,Time:8574.54484991761
-Block ID:72,Previous Block ID:66,Miner ID:5,Number of TXNs:372,Time:5955.208078627938
-Block ID:66,Previous Block ID:49,Miner ID:1,Number of TXNs:390,Time:4926.847751299173
-Block ID:49,Previous Block ID:40,Miner ID:3,Number of TXNs:413,Time:4649.837435263363
-Block ID:40,Previous Block ID:35,Miner ID:3,Number of TXNs:385,Time:3700.093270219863
-Block ID:35,Previous Block ID:21,Miner ID:3,Number of TXNs:481,Time:3045.7841623728796
-Block ID:21,Previous Block ID:12,Miner ID:6,Number of TXNs:344,Time:2328.7031701898322
-Block ID:12,Previous Block ID:6,Miner ID:4,Number of TXNs:196,Time:1151.0082833746671
-Block ID:6,Previous Block ID:1,Miner ID:4,Number of TXNs:1,Time:732.1686008280806
+Block ID:120,Previous Block ID:102,Miner ID:1,Number of TXNs:688,Time:6383.031976081824
+Block ID:102,Previous Block ID:95,Miner ID:3,Number of TXNs:328,Time:4956.606729562033
+Block ID:95,Previous Block ID:91,Miner ID:3,Number of TXNs:89,Time:3376.437035168706
+Block ID:91,Previous Block ID:79,Miner ID:6,Number of TXNs:198,Time:2796.27952481265
+Block ID:79,Previous Block ID:68,Miner ID:0,Number of TXNs:299,Time:2681.239098809356
+Block ID:68,Previous Block ID:57,Miner ID:9,Number of TXNs:187,Time:2540.027077805075
+Block ID:57,Previous Block ID:46,Miner ID:7,Number of TXNs:327,Time:2095.8978447266277
+Block ID:46,Previous Block ID:36,Miner ID:1,Number of TXNs:493,Time:2037.5335494179044
+Block ID:36,Previous Block ID:23,Miner ID:0,Number of TXNs:305,Time:1779.7529850902695
+Block ID:23,Previous Block ID:16,Miner ID:8,Number of TXNs:382,Time:1047.7952481555483
+Block ID:16,Previous Block ID:8,Miner ID:8,Number of TXNs:277,Time:978.5345985236665
+Block ID:8,Previous Block ID:1,Miner ID:6,Number of TXNs:5,Time:319.08927475323753
+Block ID:1,Previous Block ID:0,Miner ID: None,Number of TXNs:0,Time:0
 
-Total Blocks in the Chain:12
-Total Blocks in the Longest Chain:9
+Total Blocks in the Chain:14
+Total Blocks in the Longest Chain:13
 
-Blocks Mined - 0
-Blocks Mined in the Longest Chain - 0
+Blocks Mined - 1
+Blocks Mined in the Longest Chain - 1
