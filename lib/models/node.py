@@ -49,13 +49,13 @@ class Node:
         Return: float (seconds)
         """
         if(self.lowSpeed or peer.lowSpeed):
-            c = 5
+            c = 5*(10**6)
         else:
-            c = 100
-        d = randomGenerator.exponential(96/c)
+            c = 100*(10**6)
+        d = randomGenerator.exponential((96*(1000))/c)
         # Convert KB to bits
         size = size*1000*8
-        return (self.latencyMatrix[self.nodeID][peer.nodeID] + size/c + d)/1000
+        return self.latencyMatrix[self.nodeID][peer.nodeID]/1000 + size/c + d
 
     def getCoinbaseTxn(self):
         """

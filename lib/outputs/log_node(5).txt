@@ -1,41 +1,32 @@
-Hashing Power - 0.1
-Speed - High
+Hashing Power - 0.18181818181818182
+Speed - Low
 
 Total Transaction Event:570
 
 **Blocks in the Blockchain**
 Block ID:1,Previous Block ID:0,Miner ID: None,Number of TXNs:0,Time:0
-Block ID:8,Previous Block ID:1,Miner ID:6,Number of TXNs:5,Time:318.62703049920003
-Block ID:16,Previous Block ID:8,Miner ID:8,Number of TXNs:277,Time:956.0657458442713
-Block ID:19,Previous Block ID:8,Miner ID:4,Number of TXNs:277,Time:975.1947938429288
-Block ID:23,Previous Block ID:16,Miner ID:8,Number of TXNs:382,Time:1016.9278087078651
-Block ID:36,Previous Block ID:23,Miner ID:0,Number of TXNs:305,Time:1755.3431016683046
-Block ID:46,Previous Block ID:36,Miner ID:1,Number of TXNs:493,Time:2037.2452747007583
-Block ID:57,Previous Block ID:46,Miner ID:7,Number of TXNs:327,Time:2148.485987827441
-Block ID:68,Previous Block ID:57,Miner ID:9,Number of TXNs:187,Time:2539.4375342524604
-Block ID:79,Previous Block ID:68,Miner ID:0,Number of TXNs:299,Time:2657.3081419638506
-Block ID:91,Previous Block ID:79,Miner ID:6,Number of TXNs:198,Time:2780.3761268894323
-Block ID:95,Previous Block ID:91,Miner ID:3,Number of TXNs:89,Time:3383.616651796777
-Block ID:102,Previous Block ID:95,Miner ID:3,Number of TXNs:328,Time:4982.900028049868
-Block ID:120,Previous Block ID:102,Miner ID:1,Number of TXNs:688,Time:6382.742079839143
+Block ID:7,Previous Block ID:1,Miner ID:5,Number of TXNs:5,Time:352.4749597274248
+Block ID:18,Previous Block ID:7,Miner ID:3,Number of TXNs:293,Time:1253.2364853017264
+Block ID:27,Previous Block ID:18,Miner ID:2,Number of TXNs:348,Time:2454.369991910015
+Block ID:34,Previous Block ID:27,Miner ID:5,Number of TXNs:424,Time:2676.1962543915683
+Block ID:47,Previous Block ID:34,Miner ID:3,Number of TXNs:417,Time:3579.0432593223054
+Block ID:55,Previous Block ID:47,Miner ID:1,Number of TXNs:481,Time:5136.030278917139
+Block ID:63,Previous Block ID:55,Miner ID:9,Number of TXNs:456,Time:5261.240108392868
+Block ID:74,Previous Block ID:63,Miner ID:1,Number of TXNs:355,Time:7193.1728753500565
 
 **Blocks in the Longest Chain**
-Block ID:120,Previous Block ID:102,Miner ID:1,Number of TXNs:688,Time:6382.742079839143
-Block ID:102,Previous Block ID:95,Miner ID:3,Number of TXNs:328,Time:4982.900028049868
-Block ID:95,Previous Block ID:91,Miner ID:3,Number of TXNs:89,Time:3383.616651796777
-Block ID:91,Previous Block ID:79,Miner ID:6,Number of TXNs:198,Time:2780.3761268894323
-Block ID:79,Previous Block ID:68,Miner ID:0,Number of TXNs:299,Time:2657.3081419638506
-Block ID:68,Previous Block ID:57,Miner ID:9,Number of TXNs:187,Time:2539.4375342524604
-Block ID:57,Previous Block ID:46,Miner ID:7,Number of TXNs:327,Time:2148.485987827441
-Block ID:46,Previous Block ID:36,Miner ID:1,Number of TXNs:493,Time:2037.2452747007583
-Block ID:36,Previous Block ID:23,Miner ID:0,Number of TXNs:305,Time:1755.3431016683046
-Block ID:23,Previous Block ID:16,Miner ID:8,Number of TXNs:382,Time:1016.9278087078651
-Block ID:16,Previous Block ID:8,Miner ID:8,Number of TXNs:277,Time:956.0657458442713
-Block ID:8,Previous Block ID:1,Miner ID:6,Number of TXNs:5,Time:318.62703049920003
+Block ID:74,Previous Block ID:63,Miner ID:1,Number of TXNs:355,Time:7193.1728753500565
+Block ID:63,Previous Block ID:55,Miner ID:9,Number of TXNs:456,Time:5261.240108392868
+Block ID:55,Previous Block ID:47,Miner ID:1,Number of TXNs:481,Time:5136.030278917139
+Block ID:47,Previous Block ID:34,Miner ID:3,Number of TXNs:417,Time:3579.0432593223054
+Block ID:34,Previous Block ID:27,Miner ID:5,Number of TXNs:424,Time:2676.1962543915683
+Block ID:27,Previous Block ID:18,Miner ID:2,Number of TXNs:348,Time:2454.369991910015
+Block ID:18,Previous Block ID:7,Miner ID:3,Number of TXNs:293,Time:1253.2364853017264
+Block ID:7,Previous Block ID:1,Miner ID:5,Number of TXNs:5,Time:352.4749597274248
 Block ID:1,Previous Block ID:0,Miner ID: None,Number of TXNs:0,Time:0
 
-Total Blocks in the Chain:14
-Total Blocks in the Longest Chain:13
+Total Blocks in the Chain:9
+Total Blocks in the Longest Chain:9
 
-Blocks Mined - 0
-Blocks Mined in the Longest Chain - 0
+Blocks Mined - 2
+Blocks Mined in the Longest Chain - 2
