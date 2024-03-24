@@ -1,8 +1,14 @@
 {
     "default-seed": 42,
     "txn-size": 1,
-    "block-size": 1000,
+    "transaction-size-KB": 1,
+    "block-size-KB": 1000,
     "mining-fee": 50,
-    "hashing-power": 10,
-    "starting-balance": 50
+    "hashing-power-factor": 10,
+    "starting-balance": 50,
+    "low-propagation-(ms)": 10,
+    "high-propagation-(ms)": 500,
+    "low-link-speed-Mbps": 5,
+    "high-link-speed-Mbps": 100,
+    "queuing-delay-mean-Kb": 96
 }

@@ -28,7 +28,7 @@ class Block:
     ):
         self.blockID: int = blockID
         self.prevBlockID: int = prevBlockID
-        self.size: int = 1
+        self.size: int = 0
         self.balance: list[float] = list(prevBlockBalance)
         self.miner = miner
         self.length: int = prevLengthOfChain + 1
@@ -39,6 +39,7 @@ class Block:
 
         self.updateBalance()
 
+    # Update the present balance of the block
     def updateBalance(self):
         for txn in self.txnList:
             if txn.type == 0:

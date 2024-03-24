@@ -9,19 +9,27 @@ from models.node import Node
 import random
 import networkx as nx
 import matplotlib.pyplot as plt
+import pandas as pd
 
 class Simulator:
     def __init__(self, n, ttx, z0, z1, I,simTime):
         """
         Initializor for Simulator
         """
+
+        if n<0 or ttx<0 or z0<0 or z0>1 or z1<0 or z1>1 or I<0 or simTime<0:
+            raise ValueError("Invalid Parameters")
+
         print("Preparing Simulator ..")
+        
+        # Number of nodes
         self.n=n
 
         # Getting starting balance from json
         startingBalance = json.load(open(params_path))["starting-balance"]
+        
         # Genesis block creation
-        self.genesis = Block(blockID=1, prevBlockID=0, txnList=set(), prevLengthOfChain=0, miner=None, prevBlockBalance = [startingBalance]*n)
+        self.genesis = Block(blockID=1, prevBlockID=0, txnList=set(), prevLengthOfChain=0, miner=None, prevBlockBalance = [startingBalance]*self.n)
 
         # Picking random nodes for lowspeed and cpu
         lowSpeed = [True for _ in range(int(n*z0))]+[False for _ in range(n-int(n*z0))]
@@ -30,19 +38,28 @@ class Simulator:
         randomGenerator.shuffle(lowCPU)
 
         # Calculating hashing power
-        self.lowHashPower=1/(10*n-9*int(z1*n))
+        self.lowHashPower=1/(10*self.n-9*int(z1*self.n))
         self.highHashPower=10*self.lowHashPower
 
         # Calculating mine time
-        mineTime=[I/self.lowHashPower if lowCPU[i] else I/self.highHashPower for i in range(n)]
+        mineTime=[I/self.lowHashPower if lowCPU[i] else I/self.highHashPower for i in range(self.n)]
+
 
         # Latency matrix of all the nodes
-        self.latencyMatrix = randomGenerator.uniform(10,500,[n,n])
+        low = json.load(open(params_path))["low-propagation-(ms)"]
+        high = json.load(open(params_path))["high-propagation-(ms)"]
+        self.latencyMatrix = randomGenerator.uniform(low,high,[self.n,self.n])
 
         # Creation of nodes
-        self.nodes = [None]*n
-        for i in range(n):
+        self.nodes = [None]*self.n
+        for i in range(self.n):
             self.nodes[i] = Node(nodeID=i, lowSpeed=lowSpeed[i], lowCPU=lowCPU[i], mineTime=mineTime[i],genesisBlock=self.genesis,latencyMatrix=self.latencyMatrix)
+
+        totalHashingPower=0
+        for node in self.nodes:
+            print("NodeID:",node.nodeID,", Hashing Power:",I/node.mineTime, ", Mine Time:",node.mineTime)
+            totalHashingPower+=I/node.mineTime
+        print("Total Hashing Power:",totalHashingPower)
 
         self.ttx = ttx
         self.I = I
@@ -115,14 +132,12 @@ class Simulator:
         Generate first mining event for each node
         """
         print("Generating First Mining Timestamp for each Node ..")
-        i=0
+        t=0
         for p in self.nodes:
-            t = i
-            i+=1
             event=Event(time=t,type=2,receiverPeer=p)
             pushToEventQueue(event)
+            t+=1
         print("Mining Timestamps Generated\n")
-
 
     def simulate(self):
         """
@@ -156,17 +171,37 @@ class Simulator:
         Save the blockchain graph
         """
         for node in self.nodes:
+            output_dir = os.path.dirname(os.path.abspath(__file__))
+            outputs_path = os.path.join(output_dir, "../outputs/temp", f"graph_blockchain_node({node.nodeID}).txt")
+            df = pd.read_csv(outputs_path)
+
             plt.figure()
-            nx.draw(node.g, pos=nx.kamada_kawai_layout(node.g), node_size=self.n, node_color='red')
+            # Create a directed graph
+            G = nx.DiGraph()
+
+            # Add edges and nodes from the DataFrame
+            for _, row in df.iterrows():
+                G.add_node(row['block-id'], miner_id=row['miner-id'])
+                # We don't add the genesis block (0) as it does not have a miner ID
+                if row['prev-block-id'] != 0:
+                    G.add_edge(row['block-id'],row['prev-block-id'])
+
+            # Draw the graph
+            plt.figure(figsize=(12, 10))
+            pos = nx.kamada_kawai_layout(G)
+            nx.draw(G, pos, node_color='blue', with_labels=False, edge_color='black', arrowsize=10, arrowstyle='-|>', node_size=200, font_size=10)
+            plt.title('Blockchain Tree')
             output_dir = os.path.dirname(os.path.abspath(__file__))
             outputs_path = os.path.join(output_dir, "../outputs", f"blockchain_node({node.nodeID}).png")
             plt.savefig(outputs_path)
+            plt.close()
+
         print("Blockchain figure for each node saved in outputs/blockchain_node(i).png\n")
 
     def writeBlockChain(self, f, node):
         """
         Writes the blockchain of the node specified\n
-        in the file specified.\n
+        in the file specified and in a csv file.\n
         Return: Total Blocks in the Blockchain, Blocks Mined by the Node
         """
         totalBlocks=0
@@ -176,7 +211,7 @@ class Simulator:
             totalBlocks+=1
             f.write("Block ID:"+str(blockID)+","+"Previous Block ID:"+str(block.prevBlockID)+",")
             if(block.miner==None):
-                f.write("Miner ID: None")
+                f.write("Miner ID:None")
             else:
                 f.write("Miner ID:"+str(block.miner.nodeID))
                 if(block.miner.nodeID==node.nodeID):
@@ -185,7 +220,19 @@ class Simulator:
             f.write("Time:"+str(node.blockchain.rcvdBlocksTime[blockID]))
             f.write("\n")
         f.write("\n")
-        return totalBlocks,blocksMined
+
+        output_dir = os.path.dirname(os.path.abspath(__file__))
+        outputs_path = os.path.join(output_dir, "../outputs/temp", f"graph_blockchain_node({node.nodeID}).txt")
+        f1=open(outputs_path,"w")
+        f1.write("prev-block-id,block-id,miner-id\n")
+        for blockID in node.blockchain.rcvdBlocks:
+            block=node.blockchain.rcvdBlocks[blockID]
+            if(block.miner==None):
+                f1.write(str(block.prevBlockID)+","+str(blockID)+",-1\n")
+            else:
+                f1.write(str(block.prevBlockID)+","+str(blockID)+","+str(block.miner.nodeID)+"\n")
+        f1.close()
+        return totalBlocks,blocksMined        
 
     def writeLongestChain(self, f, node):
         """
@@ -220,10 +267,7 @@ class Simulator:
             output_dir = os.path.dirname(os.path.abspath(__file__))
             outputs_path = os.path.join(output_dir, "../outputs", f"log_node({node.nodeID}).txt")
             f=open(outputs_path,"w")
-            if node.lowCPU:
-                f.write(f"Hashing Power - {self.lowHashPower}\n")
-            else:
-                f.write(f"Hashing Power - {self.highHashPower}\n")
+            f.write(f"Hashing Power - {self.I/node.mineTime}\n")
             if node.lowSpeed:
                 f.write(f"Speed - Low\n")
             else:

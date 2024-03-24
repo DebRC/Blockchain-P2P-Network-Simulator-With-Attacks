@@ -4,11 +4,10 @@ class BlockChain:
     Represents blockchain in a peer-to-peer network.
 
     Attributes:
-    - rcvdBlocks (dict<BlockID, Block>): Map of all the received Blocks.
     - rcvdTxns (dict<TxnID, Txn>): Map of all the received Transactions.
+    - rcvdBlocks (dict<BlockID, Block>): Map of all the received Blocks.
     - rcvdBlocksTime (dict<BlockID, Time>): Map of the block IDs with time.
     - pendingBlocks (set(BlockID)): Map of all the block IDs which has not yet been processed.
-    - pendingTxns (set(TxnID)): Map of all the Txn IDs which has not yet been processed.
     - orphanBlocks (set(BlockID)): Map of all the block IDs whose parent is not yet been in the chain.
     - invalidBlocks (set(BlockID)): Map of all the block IDs which has invalid txns.
     - lastBlock (Block): Reference to the last block.
@@ -22,12 +21,12 @@ class BlockChain:
         """
         Initializes a Blockchain Object.
         """
+        self.rcvdTxns = set()
+
         self.rcvdBlocks = dict()
-        self.rcvdTxns = dict()
         self.rcvdBlocksTime = dict()
 
         self.pendingBlocks = set()
-        self.pendingTxns = set()
         self.orphanBlocks = set()
         self.invalidBlocks = set()
 
