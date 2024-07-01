@@ -1,5 +1,8 @@
 # Blockchain-P2P-Network-Simulator-With-Attacks
 A discrete-event blockchain simulator for a P2P cryptocurrency network with capability of PoW performance analysis and simulation of Selfish Mining attack.
+<p align="center">
+  <img width="250" height="150" src="https://github.com/DebRC/Blockchain-P2P-Network-Simulator-With-Attacks/assets/63597606/b2a83720-0cc4-4fc8-98a3-8afca7f9e651">
+</p>
 
 ## Project Structure
 * The project is divided into two folders.
@@ -35,3 +38,6 @@ A discrete-event blockchain simulator for a P2P cryptocurrency network with capa
 
 ## Where are the simulation outputs saved?
 Network graph, Blockchain graph and log for each node is saved inside `normal_lib/outputs` and `attack_lib/outputs` folder after the end of simulation.
+
+## Simulator-Design
+![Design-Doc](https://github.com/DebRC/Blockchain-P2P-Network-Simulator-With-Attacks/assets/63597606/91415115-dfa2-43f3-902e-14f1579b74b3)
