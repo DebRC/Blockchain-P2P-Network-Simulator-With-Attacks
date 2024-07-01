@@ -1,20 +1,37 @@
-# P2P-Blockchain-Network-Simulator
-A discrete-event blockchain simulator for a P2P cryptocurrency network.
+# Blockchain-P2P-Network-Simulator-With-Attacks
+A discrete-event blockchain simulator for a P2P cryptocurrency network with capability of PoW performance analysis and simulation of Selfish Mining attack.
 
-## How to Run (Ubuntu/Debian)?
+## Project Structure
+* The project is divided into two folders.
+* `normal_lib` contains the code for running a blockchain simulator with various configurable parameters without attacks.
+* `attack_lib` contains the code for running a blockchain simulator with multiple clients acting as Selfish Miner.
+* `Normal-Report.pdf` and `Attack-Report.pdf` contains a performance analysis of both the simulators with detailed explanation.
+
+## How to run Normal Simulator(Ubuntu/Debian)?
 * Setup the Project - `bash setup.sh`
 * Activate the Virtual Environment - `source venv/bin/activate`
-* Run as default parameters - `python3 lib/main.py`
+* Run simulator with default parameters - `python3 normal_lib/main.py`
+### How to change default parameters?
+* Number of nodes in the P2P network: `-n` or `--num_nodes`
+* Percentage of slow nodes: `-z0` or `--percentage_slow`
+* Percentage of nodes having low CPU power: `-z1` or `--percentage_lowcpu`
+* Mean inter-arrival time between transactions: `-ttx` or `--mean_inter_arrival`
+* Average time taken to mine a block: `-I` or `--average_block_mining_time`
+* Total time for which the P2P network is simulated: `-T` or `--simulation_time`
+* Example - `python3 main.py -n 10 -z0 0.5 -z1 0.5 -ttx 10 -I 600 -T 6000`
 
-## How to change default parameters?
-* number of nodes in the P2P network: `-n` or `--num_nodes`
-* percentage of slow nodes: `-z0` or `--percentage_slow`
-* percentage of nodes having low CPU power: `-z1` or `--percentage_lowcpu`
-* mean inter-arrival time between transactions: `-ttx` or `--mean_inter_arrival`
-* average time taken to mine a block: `-I` or `--average_block_mining_time`
+## How to run Selfish Attack Simulator(Ubuntu/Debian)?
+* Setup the Project - `bash setup.sh`
+* Activate the Virtual Environment - `source venv/bin/activate`
+* Run simulator with default parameters - `python3 attack_lib/main.py`
+### How to change default parameters?
+* Number of honest nodes in the P2P network: `-n` or `--num_honest_nodes`
+* Hashing Power of first Selfish Node: `-z1` or `--zeta1`
+* Hashing Power of second Selfish Node: `-z2` or `--zeta2`
+* Mean inter-arrival time between transactions: `-ttx` or `--mean_inter_arrival`
+* Average time taken to mine a block: `-I` or `--average_block_mining_time`
 * total time for which the P2P network is simulated: `-T` or `--simulation_time`
-
-Example - `python3 main.py -n 10 -z0 0.5 -z1 0.5 -ttx 10 -I 600 -T 6000`
+* Example - `python3 main.py -n 10 -z1 0.3 -z2 0.3 -ttx 10 -I 300 -T 6000`
 
 ## Where are the simulation outputs saved?
-Network graph, Blockchain graph and log for each node is saved inside `lib/outputs` folder after the end of simulation.
+Network graph, Blockchain graph and log for each node is saved inside `normal_lib/outputs` and `attack_lib/outputs` folder after the end of simulation.

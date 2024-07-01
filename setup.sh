@@ -18,6 +18,7 @@ source venv/bin/activate
 pip3 install -r requirements.txt
 
 # Create the necessary folders
-mkdir -p lib/outputs/temp
+mkdir -p normal_lib/outputs/temp
+mkdir -p attack_lib/outputs/temp
 
 echo "Setup Completed"
